@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>n8n Workflow Chat</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        #chat-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            width: 100%;
+            max-width: 600px;
+            margin: auto;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        #chat-box {
+            flex: 1;
+            padding: 10px;
+            overflow-y: auto;
+            background-color: #f9f9f9;
+        }
+
+        .user-message, .bot-message {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 10px;
+            max-width: 80%;
+        }
+
+        .user-message {
+            align-self: flex-end;
+            background-color: #d1e7dd;
+            color: #0f5132;
+            text-align: left; /* Keep text alignment natural */
+            margin-left: auto; /* Push the entire message to the right */
+        }
+
+        .bot-message {
+            align-self: flex-start;
+            background-color: #e2e3e5;
+            color: #41464b;
+            text-align: left;
+            margin-right: auto; /* Keep bot messages on the left */
+        }
+
+        #input-container {
+            display: flex;
+            padding: 10px;
+            background-color: #fff;
+            border-top: 1px solid #ccc;
+        }
+
+        #message {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        #message:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+
+        #header {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            background-color: #f9f9f9; /* Light gray background */
+            color: #333; /* Softer font color */
+            font-size: 24px; /* Slightly larger font size */
+            font-weight: bold;
+            border-bottom: 1px solid #ccc;
+        }
+
+        #header img {
+            height: 60px; /* Larger logo size */
+            margin-right: 15px;
+        }
+    </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const messageInput = document.getElementById('message');
+            const chatBox = document.getElementById('chat-box');
+
+            messageInput.addEventListener('keydown', async (event) => {
+                if (event.key === 'Enter' && !event.shiftKey) {
+                    event.preventDefault();
+                    const message = messageInput.value.trim();
+                    if (!message) return;
+
+                    // Display the user's message
+                    const userMessage = document.createElement('div');
+                    userMessage.className = 'user-message';
+                    userMessage.textContent = message;
+                    chatBox.appendChild(userMessage);
+
+                    // Clear the input field
+                    messageInput.value = '';
+
+                    try {
+                        const response = await fetch('/flask-chat', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ message }),
+                        });
+
+                        const data = await response.json();
+
+                        // Display the response from n8n
+                        const botMessage = document.createElement('div');
+                        botMessage.className = 'bot-message';
+                        botMessage.textContent = data.response || 'No response';
+                        chatBox.appendChild(botMessage);
+                    } catch (error) {
+                        const errorMessage = document.createElement('div');
+                        errorMessage.className = 'bot-message';
+                        errorMessage.textContent = 'Error: ' + error.message;
+                        chatBox.appendChild(errorMessage);
+                    }
+
+                    // Scroll to the bottom of the chat box
+                    chatBox.scrollTop = chatBox.scrollHeight;
+                }
+            });
+        });
+    </script>
+</head>
+<body>
+    <div id="chat-container">
+        <div id="header">
+            <img src="/static/logo.png" alt="Logo">
+            Mould ID Extract Services
+        </div>
+        <div id="chat-box"></div>
+        <div id="input-container">
+            <textarea id="message" placeholder="Type your message here..." rows="1"></textarea>
+        </div>
+    </div>
+</body>
+</html>
